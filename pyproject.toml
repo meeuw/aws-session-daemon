@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "aws_assume"
-version = "0.1.0"
+version = "0.1.1"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-yubikey-manager = "2.0.0"
+yubikey-manager = "2.1.0"
 click = "6.7"
 boto3 = "1.7"
 
