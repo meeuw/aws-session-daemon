@@ -52,7 +52,8 @@ def ykman_main(*args):
 @click.option("--oath_slot")
 @click.option("--serialnumber")
 @click.option("--profile_name")
-def main(rolearn, oath_slot, serialnumber, profile_name):
+@click.option("--debug", default=False)
+def main(rolearn, oath_slot, serialnumber, profile_name, debug):
     invalid_token = None
     while 1:
         client = boto3.client('sts')
@@ -60,6 +61,8 @@ def main(rolearn, oath_slot, serialnumber, profile_name):
             stdout, stderr = ykman_main("oath", "code", "-s", oath_slot)
             if len(stdout) == 1:
                 token, = stdout
+                if debug:
+                    print("got token {}".format(token))
                 if token == invalid_token:
                     print("invalid token, wait for new token")
                     time.sleep(1)
@@ -73,9 +76,13 @@ def main(rolearn, oath_slot, serialnumber, profile_name):
                         SerialNumber=serialnumber,
                         TokenCode=token
                     )
+                    if debug:
+                        print("assume_role completed successfully")
                     break
 
                 except botocore.exceptions.ClientError as e:
+                    if debug:
+                        print("assume_role failed")
                     client = boto3.client('sts')
                     invalid_token = token
 

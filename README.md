@@ -88,8 +88,11 @@ serverurl=unix:///home/user/supervisord.sock
 [unix_http_server]
 file=/home/user/supervisord.sock
 
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
 [program:assume-...]
-command=%h/bin/_assume --rolearn=... --oath_slot=... --serialnumber=... --profile_name=...
+command=/home/user/bin/_assume --rolearn=... --oath_slot=... --serialnumber=... --profile_name=...
 autorestart=true
 ```
 
