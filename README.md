@@ -40,21 +40,24 @@ section should be touched (your comments will be safe).
 
 Older versions are rotated up to 5 items.
 
-Next _assume should be started with the following arguments:
+Next `_assume` should be started with the following arguments:
 
 ```bash
-_assume --rolearn ... --oath_slot=... --serialnumber=... --profile_name=...
+_assume --rolearn ... --oath_slot=... --serialnumber=... --profile_name=... --access-key-id=... --secret-access-key=... --mfa-session-duration=...
 ```
 
-Argument         | Description
------------------|-------------------------------------
-`--rolearn`      | arn of the role you'd like to assume
-`--oath_slot`    | oath slot on your yubikey
-`--serialnumber` | serial number of your MFA
-`--profile_name` | profile used in `~/.aws/credentials`
+Argument                 | Description
+-------------------------|-------------------------------------
+`--rolearn`              | arn of the role you'd like to assume
+`--oath_slot`            | oath slot on your yubikey
+`--serialnumber`         | serial number of your MFA
+`--profile_name`         | profile used in `~/.aws/credentials`
+`--access-key-id`        | access key (as obtained from IAM console)
+`--secret-access-key`    | secret access key (as obtained from IAM console)
+`--mfa-session-duration` | duration (in seconds) for MFA session
 
-You should only run one _assume process per profile, I use systemd for
-starting _assume, by using the following unit file:
+You should only run one `_assume` process per profile, I use systemd for
+starting `_assume`, by using the following unit file:
 
 `~/.config/systemd/user/aws_assume@.service`
 
@@ -64,18 +67,18 @@ Description=Amazon Web Services token daemon
 
 [Service]
 Type=simple
-ExecStart=%h/bin/_assume --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...'
+ExecStart=%h/bin/_assume --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...' --access-key-id='...' --secret-access-key='...'
 Restart=on-failure
 
 [Install]
 WantedBy=default.target
 ```
 
-And reload systemd using `systemctl --user daemon-reload`, start _assume using
+And reload systemd using `systemctl --user daemon-reload`, start `_assume` using
 `systemctl --user start aws_assume@...`
 
 If you're not so fortunate to have systemd you can also use something like
-`supervisord` to start _assume.
+`supervisord` to start `_assume`.
 
 `~/supervisord.conf`
 
@@ -92,7 +95,7 @@ file=/home/user/supervisord.sock
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:assume-...]
-command=/home/user/bin/_assume --rolearn=... --oath_slot=... --serialnumber=... --profile_name=...
+command=/home/user/bin/_assume --rolearn=... --oath_slot=... --serialnumber=... --profile_name=... --access-key-id=... --secret-access-key=...
 autorestart=true
 ```
 

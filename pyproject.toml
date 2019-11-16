@@ -1,17 +1,19 @@
 [tool.poetry]
 name = "aws_assume"
-version = "0.1.4"
+version = "0.2.0"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-yubikey-manager = "2.1.0"
 click = "7.0"
-boto3 = "1.9.101"
+aws_credential_process = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
+freezegun = "^0.3.12"
+pytest-cov = "^2.8"
+pylint = "^2.4"
 
 [tool.poetry.scripts]
 _assume = "aws_assume._assume:main"
