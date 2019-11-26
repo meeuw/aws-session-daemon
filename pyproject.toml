@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aws_assume"
-version = "0.2.0"
+version = "0.2.1"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 

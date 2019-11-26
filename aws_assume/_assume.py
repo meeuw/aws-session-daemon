@@ -5,6 +5,7 @@ import sys
 import click
 import aws_credential_process
 import time
+import configparser
 
 """
 .config/systemd/user/aws_assume@.service
@@ -40,8 +41,8 @@ aws_session_token = ...
 @click.option("--oath_slot", required=True)
 @click.option("--serialnumber", required=True)
 @click.option("--profile_name", required=True)
-@click.option("--access-key-id", required=True)
-@click.option("--secret-access-key", required=True)
+@click.option("--access-key-id", required=False)
+@click.option("--secret-access-key", required=False)
 @click.option("--mfa-session-duration", type=int)
 @click.option("--debug", default=False)
 def main(
@@ -55,7 +56,30 @@ def main(
     debug,
 ):
     invalid_token = None
+    if not access_key_id:
+        config = configparser.ConfigParser()
+        config.read(os.path.expanduser("~/.aws/credentials"))
+        if "default" in config:
+            access_key_id = config["default"].get("aws_access_key_id")
+            secret_access_key = config["default"].get("aws_secret_access_key")
+        else:
+            click.echo(
+                "No --access_key_id supplied and ~/.aws/credentials [default] is missing."
+            )
+            sys.exit(1)
+    if access_key_id is None:
+        click.echo(
+            "Missing access_key_id, please use --access-key-id or add to ~/.aws/credentials"
+        )
+        sys.exit(1)
+    if secret_access_key is None:
+        click.echo(
+            "Missing secret_access_key, please use --secret-access-key add to ~/.aws/credentials"
+        )
+        sys.exit(1)
+
     access_key = aws_credential_process.AWSCred(access_key_id, secret_access_key)
+
     while 1:
         mfa_session = None
         while mfa_session is None:
