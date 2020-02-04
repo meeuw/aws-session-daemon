@@ -44,7 +44,7 @@ aws_session_token = ...
 @click.option("--access-key-id", required=False)
 @click.option("--secret-access-key", required=False)
 @click.option("--mfa-session-duration", type=int)
-@click.option("--debug", default=False)
+@click.option("--credentials-section", default="default")
 def main(
     rolearn,
     oath_slot,
@@ -53,20 +53,12 @@ def main(
     access_key_id,
     secret_access_key,
     mfa_session_duration,
-    debug,
+    credentials_section,
 ):
     invalid_token = None
     if not access_key_id:
-        config = configparser.ConfigParser()
-        config.read(os.path.expanduser("~/.aws/credentials"))
-        if "default" in config:
-            access_key_id = config["default"].get("aws_access_key_id")
-            secret_access_key = config["default"].get("aws_secret_access_key")
-        else:
-            click.echo(
-                "No --access_key_id supplied and ~/.aws/credentials [default] is missing."
-            )
-            sys.exit(1)
+        access_key_id, secret_access_key = aws_credential_process.get_credentials(credentials_section)
+
     if access_key_id is None:
         click.echo(
             "Missing access_key_id, please use --access-key-id or add to ~/.aws/credentials"
@@ -74,7 +66,7 @@ def main(
         sys.exit(1)
     if secret_access_key is None:
         click.echo(
-            "Missing secret_access_key, please use --secret-access-key add to ~/.aws/credentials"
+            "Missing secret_access_key, please use --secret-access-key or add to ~/.aws/credentials"
         )
         sys.exit(1)
 

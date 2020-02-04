@@ -55,6 +55,7 @@ Argument                 | Description
 `--access-key-id`        | access key (as obtained from IAM console)
 `--secret-access-key`    | secret access key (as obtained from IAM console)
 `--mfa-session-duration` | duration (in seconds) for MFA session
+`--credentials-section`  | you can specify a different section than default in `~/.aws/credentials`
 
 You should only run one `_assume` process per profile, I use systemd for
 starting `_assume`, by using the following unit file:
