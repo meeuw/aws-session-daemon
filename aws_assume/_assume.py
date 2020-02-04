@@ -36,6 +36,10 @@ aws_session_token = ...
 """
 
 
+class NoYubiKeyException(Exception):
+    pass
+
+
 @click.command()
 @click.option("--rolearn", required=True)
 @click.option("--oath_slot", required=True)
@@ -57,7 +61,9 @@ def main(
 ):
     invalid_token = None
     if not access_key_id:
-        access_key_id, secret_access_key = aws_credential_process.get_credentials(credentials_section)
+        access_key_id, secret_access_key = aws_credential_process.get_credentials(
+            credentials_section
+        )
 
     if access_key_id is None:
         click.echo(
@@ -72,12 +78,24 @@ def main(
 
     access_key = aws_credential_process.AWSCred(access_key_id, secret_access_key)
 
+    def token_code():
+        stdout, _ = aws_credential_process.ykman_main("oath", "code", "-s", oath_slot)
+
+        if len(stdout) == 1:
+            (token_code,) = stdout
+            return token_code
+
+        raise NoYubiKeyException()
+
     while 1:
         mfa_session = None
         while mfa_session is None:
-            mfa_session = aws_credential_process.get_mfa_session_cached(
-                access_key, mfa_session_duration, serialnumber, oath_slot
-            )
+            try:
+                mfa_session = aws_credential_process.get_mfa_session_cached(
+                    access_key, mfa_session_duration, serialnumber, token_code
+                )
+            except NoYubiKeyException:
+                pass
             time.sleep(1)
 
         assume_session = aws_credential_process.get_assume_session(

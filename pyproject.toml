@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aws_assume"
-version = "0.2.2"
+version = "0.2.3"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 readme = "README.md"
@@ -10,7 +10,7 @@ keywords = ['AWS', 'MFA', 'keyring', 'keychain', 'yubikey']
 [tool.poetry.dependencies]
 python = "^3.7"
 click = "7.0"
-aws_credential_process = "^0.1.0"
+aws_credential_process = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

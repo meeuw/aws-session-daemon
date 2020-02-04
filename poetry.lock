@@ -43,7 +43,7 @@ description = "AWS Credential Process"
 name = "aws-credential-process"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.1.4"
+version = "0.2.0"
 
 [package.dependencies]
 boto3 = ">=1.10,<2.0"
@@ -503,7 +503,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools"]
 
 [metadata]
-content-hash = "f5b6e61368c1aabead20e6262c4ce24d55481c27a5612bb04e0817a786f2dfff"
+content-hash = "58edc4133c616a2da5183a8bbc35d8a3a57943476a6267cf501ed93ce227c64d"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -520,8 +520,8 @@ attrs = [
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
 aws-credential-process = [
-    {file = "aws-credential-process-0.1.4.tar.gz", hash = "sha256:0e880f637b1041f6dae00c71b16dbef09ddda608079e0f2df8f58d6168198a6e"},
-    {file = "aws_credential_process-0.1.4-py3-none-any.whl", hash = "sha256:5a4231e9a45318f9ccdb65ac14f12b10faaaba4c324a15950f2edddc727877ad"},
+    {file = "aws-credential-process-0.2.0.tar.gz", hash = "sha256:7c1d6414a3d8db18254aae1615efd01cbe062a802089a944be8b51c64feef8b9"},
+    {file = "aws_credential_process-0.2.0-py3-none-any.whl", hash = "sha256:d6eea889f4d08ffc45b9ee145b8aab20887f0a473eade4818f6ec175a96d4fa8"},
 ]
 boto3 = [
     {file = "boto3-1.11.9-py2.py3-none-any.whl", hash = "sha256:3480c87b530e7f41d9264a6725dda68208de2697822cf02cd3a541b001872410"},
