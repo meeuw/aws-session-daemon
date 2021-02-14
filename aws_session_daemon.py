@@ -8,14 +8,14 @@ import time
 import configparser
 
 """
-.config/systemd/user/aws_assume@.service
+.config/systemd/user/aws-session-daemon@.service
 
 [Unit]
 Description=Amazon Web Services token daemon
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -u %h/bin/_assume --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...'
+ExecStart=/usr/bin/python3 -u %h/bin/aws_session-daemon --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...'
 Restart=on-failure
 
 [Install]
@@ -41,7 +41,7 @@ class NoYubiKeyException(Exception):
 
 
 @click.command()
-@click.option("--rolearn", required=True)
+@click.option("--rolearn", required=False)
 @click.option("--oath_slot", required=True)
 @click.option("--serialnumber", required=True)
 @click.option("--profile_name", required=True)
@@ -98,9 +98,12 @@ def main(
                 pass
             time.sleep(1)
 
-        assume_session = aws_credential_process.get_assume_session(
-            access_key, mfa_session, rolearn, None
-        )
+        if rolearn:
+            session = aws_credential_process.get_assume_session(
+                access_key, mfa_session, rolearn, None
+            )
+        else:
+            session = mfa_session
 
         credentials_file = os.path.expanduser("~/.aws/credentials")
         # rotate credentials files
@@ -120,17 +123,15 @@ def main(
                 profile = True
             if profile and line.startswith("aws_access_key_id"):
                 updated["aws_access_key_id"] = True
-                line = "aws_access_key_id = {}\n".format(
-                    assume_session.awscred.access_key_id
-                )
+                line = "aws_access_key_id = {}\n".format(session.awscred.access_key_id)
             if profile and line.startswith("aws_secret_access_key"):
                 updated["aws_secret_access_key"] = True
                 line = "aws_secret_access_key = {}\n".format(
-                    assume_session.awscred.secret_access_key
+                    session.awscred.secret_access_key
                 )
             if profile and line.startswith("aws_session_token"):
                 updated["aws_session_token"] = True
-                line = "aws_session_token = {}\n".format(assume_session.session_token)
+                line = "aws_session_token = {}\n".format(session.session_token)
             print(line, end="")
 
         if len(updated) == 0:
@@ -149,7 +150,3 @@ def main(
                     )
 
         time.sleep(60 * 15)
-
-
-if __name__ == "__main__":
-    main()

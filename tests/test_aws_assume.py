@@ -6,18 +6,13 @@ import pytest
 from click.testing import CliRunner
 import freezegun
 
-from aws_assume import __version__
-import aws_assume._assume
+import aws_session_daemon
 
 UTC = datetime.timezone.utc
 
 
 class MyTestException(Exception):
     pass
-
-
-def test_version():
-    assert __version__ == "0.2.1"
 
 
 @pytest.fixture
@@ -99,7 +94,7 @@ def test_happy_flow(setup):
         "secret-access-key": "test-secret",
     }
     result = runner.invoke(
-        aws_assume._assume.main, list("--" + "=".join(k) for k in arguments.items())
+        aws_session_daemon.main, list("--" + "=".join(k) for k in arguments.items())
     )
     assert isinstance(result.exception, MyTestException), result.output
     assert setup["get_session_token"].mock_calls == [
@@ -134,7 +129,7 @@ def test_no_yubikey(setup):
         "secret-access-key": "test-secret",
     }
     result = runner.invoke(
-        aws_assume._assume.main, list("--" + "=".join(k) for k in arguments.items())
+        aws_session_daemon.main, list("--" + "=".join(k) for k in arguments.items())
     )
     assert isinstance(result.exception, MyTestException), result.exception
     assert setup["assume_role"].mock_calls == []
