@@ -6,6 +6,7 @@ import click
 import aws_credential_process
 import time
 import configparser
+import toml
 
 """
 .config/systemd/user/aws-session-daemon@.service
@@ -15,7 +16,7 @@ Description=Amazon Web Services token daemon
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -u %h/bin/aws_session-daemon --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...'
+ExecStart=%h/bin/aws-session-daemon --config-section='%i'
 Restart=on-failure
 
 [Install]
@@ -36,19 +37,22 @@ aws_session_token = ...
 """
 
 
+def traverse_config(config, accumulated, flattened):
+    for k, v in config.items():
+        if isinstance(v, list):
+            for i in v:
+                accumulated_copy = accumulated.copy()
+                flattened[k] = traverse_config(i, accumulated_copy, flattened)
+        else:
+            accumulated[k] = v
+
+    return accumulated
+
+
 class NoYubiKeyException(Exception):
     pass
 
 
-@click.command()
-@click.option("--rolearn", required=False)
-@click.option("--oath_slot", required=True)
-@click.option("--serialnumber", required=True)
-@click.option("--profile_name", required=True)
-@click.option("--access-key-id", required=False)
-@click.option("--secret-access-key", required=False)
-@click.option("--mfa-session-duration", type=int)
-@click.option("--credentials-section", default="default")
 def main(
     rolearn,
     oath_slot,
@@ -59,7 +63,9 @@ def main(
     mfa_session_duration,
     credentials_section,
 ):
-    invalid_token = None
+    """
+    aws session daemon
+    """
     if not access_key_id:
         access_key_id, secret_access_key = aws_credential_process.get_credentials(
             credentials_section
@@ -150,3 +156,77 @@ def main(
                     )
 
         time.sleep(60 * 15)
+
+
+@click.command()
+@click.option("--config-section", required=True)
+@click.option("--key", required=True)
+def get_config(config_section, key):
+    with open(os.path.expanduser("~/.config/aws-session-daemon/config.toml")) as f:
+        parsed_config = aws_credential_process.parse_config(toml.load(f))
+    if config_section in parsed_config:
+        if key in parsed_config[config_section]:
+            click.echo(parsed_config[config_section][key])
+
+
+@click.command()
+@click.option("--rolearn")
+@click.option("--oath_slot")
+@click.option("--serialnumber")
+@click.option("--profile_name")
+@click.option("--access-key-id")
+@click.option("--secret-access-key")
+@click.option("--mfa-session-duration", type=int)
+@click.option("--credentials-section")
+@click.option("--config-section")
+def click_main(
+    rolearn,
+    oath_slot,
+    serialnumber,
+    profile_name,
+    access_key_id,
+    secret_access_key,
+    mfa_session_duration,
+    credentials_section,
+    config_section,
+):
+    """
+    aws session daemon
+    """
+    config = {}
+    with open(os.path.expanduser("~/.config/aws-credential-process/config.toml")) as f:
+        parsed_config = aws_credential_process.parse_config(toml.load(f))
+    if config_section:
+        if config_section in parsed_config:
+            config = parsed_config[config_section]
+        else:
+            config.echo("Config section {config_section} not found", err=True)
+            sys.exit(1)
+
+    if rolearn:
+        config["assume_role_arn"] = rolearn
+    if oath_slot:
+        config["mfa_oath_slot"] = oath_slot
+    if serialnumber:
+        config["mfa_serial_number"] = serialnumber
+    if profile_name:
+        config["profile_name"] = profile_name
+    if access_key_id:
+        config["access_key_id"] = access_key_id
+    if secret_access_key:
+        config["secret_access_key"] = secret_access_key
+    if mfa_session_duration:
+        config["mfa_session_duration"] = mfa_session_duration
+    if credentials_section:
+        config["credentials_section"] = credentials_section
+
+    main(
+        config.get("assume_role_arn"),
+        config.get("mfa_oath_slot"),
+        config.get("mfa_serial_number"),
+        config.get("profile_name"),
+        config.get("access_key_id"),
+        config.get("secret_access_key"),
+        config.get("mfa_session_duration"),
+        config.get("credentials_section"),
+    )

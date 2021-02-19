@@ -51,6 +51,8 @@ Argument                 | Description
 `--secret-access-key`    | secret access key (as obtained from IAM console)
 `--mfa-session-duration` | duration (in seconds) for MFA session
 `--credentials-section`  | you can specify a different section than default in `~/.aws/credentials`
+`--config-section TEXT`  | config section in configuration file `~/config/aws-session-daemon/config.toml`
+
 
 You should only run one `aws-session-daemon` process per profile, I use systemd for starting `aws-session-daemon`, by using the
 following unit file:
@@ -63,7 +65,7 @@ Description=Amazon Web Services token daemon
 
 [Service]
 Type=simple
-ExecStart=%h/bin/aws-session-daemon --rolearn='...%i...' --oath_slot=... --serialnumber=... --profile_name='...%i...' --access-key-id='...' --secret-access-key='...'
+ExecStart=%h/bin/aws-session-daemon --config-section='%i'
 Restart=on-failure
 
 [Install]
@@ -89,9 +91,61 @@ file=/home/user/supervisord.sock
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:session-daemon-...]
-command=/home/user/bin/aws-session-daemon --rolearn=... --oath_slot=... --serialnumber=... --profile_name=... --access-key-id=... --secret-access-key=...
+command=/home/user/bin/aws-session-daemon --config-section=...
 autorestart=true
 ```
 
 Start supervisord using `supervisord -c supervisor.conf` and start session-daemon using
 `supervisorctl -c supervisor.conf start session-daemon-...`.
+
+## Configuration
+
+aws-session-daemon can also use a configuration file, the default location of
+this file is `~/.config/aws-session-daemon/config.toml`. This file contains
+defaults so you don't have to supply all of the arguments.
+
+You can define multiple config-sections:
+
+```toml
+[123457890123]
+mfa_oath_slot="Amazon Web Services:user@123457890123"
+assume_role_arn="arn:aws:iam::123457890123:role/Other/Role"
+credentials_section="123457890123"
+mfa_serial_number="arn:aws:iam::123457890123:mfa/user"
+
+[098765432101]
+mfa_oath_slot="Amazon Web Services:user@098765432101"
+credentials_section="098765432101"
+mfa_serial_number="arn:aws:iam::098765432101:mfa/user"
+```
+
+If you need to assume roles from a certain AWS account you'll end up with a lot
+of simular entries. To make this simple the configuration can be defined
+hierarchical.
+
+```toml
+[[org]]
+mfa_oath_slot="Amazon Web Services:user@123457890123"
+assume_role_arn="arn:aws:iam::{section}:role/Other/Role"
+credentials_section="123457890123"
+mfa_serial_number="arn:aws:iam::123457890123:mfa/user"
+
+[[org.098765432101]]
+[[org.567890123456]]
+```
+
+This would be the same as the following configuration:
+
+```toml
+[098765432101]
+mfa_oath_slot="Amazon Web Services:user@123457890123"
+assume_role_arn="arn:aws:iam::098765432101:role/Other/Role"
+credentials_section="123457890123"
+mfa_serial_number="arn:aws:iam::123457890123:mfa/user"
+
+[567890123456]
+mfa_oath_slot="Amazon Web Services:user@123457890123"
+assume_role_arn="arn:aws:iam::567890123456:role/Other/Role"
+credentials_section="123457890123"
+mfa_serial_number="arn:aws:iam::123457890123:mfa/user"
+```
