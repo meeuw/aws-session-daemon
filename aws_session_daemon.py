@@ -106,7 +106,7 @@ def main(
 
         if rolearn:
             session = aws_credential_process.get_assume_session(
-                access_key, mfa_session, rolearn, None
+                access_key, mfa_session, rolearn, None, None
             )
         else:
             session = mfa_session
