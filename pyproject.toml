@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aws-session-daemon"
-version = "0.2.0"
+version = "0.2.1"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 readme = "README.md"
@@ -8,7 +8,7 @@ repository = "https://github.com/meeuw/aws-session-daemon"
 keywords = ['AWS', 'MFA', 'keyring', 'keychain', 'yubikey']
 
 [tool.poetry.dependencies]
-python = ">= 3.7"
+python = ">=3.6,<4.0"
 click = ">= 7"
 aws_credential_process = ">= 0.10"
 toml = "^0.10.2"
