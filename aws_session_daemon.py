@@ -85,7 +85,7 @@ def main(
     access_key = aws_credential_process.AWSCred(access_key_id, secret_access_key)
 
     def token_code():
-        stdout, _ = aws_credential_process.ykman_main("oath", "code", "-s", oath_slot)
+        stdout, _ = aws_credential_process.ykman_main("oath", "accounts", "code", "-s", oath_slot)
 
         if len(stdout) == 1:
             (token_code,) = stdout
