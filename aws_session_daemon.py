@@ -54,14 +54,16 @@ class NoYubiKeyException(Exception):
 
 
 def main(
-    rolearn,
-    oath_slot,
-    serialnumber,
+    assume_role_arn,
+    assume_role_source_identity,
+    mfa_oath_slot,
+    mfa_serial_number,
     profile_name,
     access_key_id,
     secret_access_key,
     mfa_session_duration,
     credentials_section,
+    assume_session_duration,
 ):
     """
     aws session daemon
@@ -85,7 +87,9 @@ def main(
     access_key = aws_credential_process.AWSCred(access_key_id, secret_access_key)
 
     def token_code():
-        stdout, _ = aws_credential_process.ykman_main("oath", "accounts", "code", "-s", oath_slot)
+        stdout, _ = aws_credential_process.ykman_main(
+            "oath", "accounts", "code", "-s", mfa_oath_slot
+        )
 
         if len(stdout) == 1:
             (token_code,) = stdout
@@ -93,23 +97,63 @@ def main(
 
         raise NoYubiKeyException()
 
+    if mfa_session_duration == 0:
+        mfa_session_request = (
+            access_key,
+            mfa_session_duration,
+        )
+    else:
+        mfa_session_request = (
+            access_key,
+            mfa_session_duration,
+            mfa_serial_number,
+            token_code,
+        )
+
     while 1:
         mfa_session = None
-        while mfa_session is None:
-            try:
-                mfa_session = aws_credential_process.get_mfa_session_cached(
-                    access_key, mfa_session_duration, serialnumber, token_code
-                )
-            except NoYubiKeyException:
-                pass
-            time.sleep(1)
 
-        if rolearn:
-            session = aws_credential_process.get_assume_session(
-                access_key, mfa_session, rolearn, None, None
-            )
+        if assume_role_arn:
+            if mfa_session_duration != 0:
+                for tri in range(300):
+                    if tri > 0:
+                        time.sleep(1)
+                    try:
+                        mfa_session = aws_credential_process.get_mfa_session_cached(
+                            *mfa_session_request
+                        )
+                        break
+                    except NoYubiKeyException:
+                        pass
+
+            if mfa_session_duration == 0:
+                session = aws_credential_process.get_assume_session(
+                    access_key,
+                    mfa_session,
+                    assume_role_arn,
+                    None,
+                    None,
+                    assume_role_source_identity,
+                    assume_session_duration,
+                    mfa_serial_number,
+                    token_code,
+                )
+            else:
+                session = aws_credential_process.get_assume_session(
+                    access_key,
+                    mfa_session,
+                    assume_role_arn,
+                    None,
+                    None,
+                    assume_role_source_identity,
+                    assume_session_duration,
+                )
         else:
-            session = mfa_session
+            if mfa_session_duration == 0:
+                print("Cannot do MFA without session")
+                sys.exit(1)
+
+            session = aws_credential_process.get_mfa_session(*mfa_session_request)
 
         credentials_file = os.path.expanduser("~/.aws/credentials")
         # rotate credentials files
@@ -170,9 +214,11 @@ def get_config(config_section, key):
 
 
 @click.command()
-@click.option("--rolearn")
-@click.option("--oath_slot")
-@click.option("--serialnumber")
+@click.option("--assume-session-duration", type=int)
+@click.option("--assume-role-arn")
+@click.option("--assume-role-source-identity")
+@click.option("--mfa-oath-slot")
+@click.option("--mfa-serial-number")
 @click.option("--profile_name")
 @click.option("--access-key-id")
 @click.option("--secret-access-key")
@@ -180,9 +226,11 @@ def get_config(config_section, key):
 @click.option("--credentials-section")
 @click.option("--config-section")
 def click_main(
-    rolearn,
-    oath_slot,
-    serialnumber,
+    assume_session_duration,
+    assume_role_arn,
+    assume_role_source_identity,
+    mfa_oath_slot,
+    mfa_serial_number,
     profile_name,
     access_key_id,
     secret_access_key,
@@ -200,33 +248,39 @@ def click_main(
         if config_section in parsed_config:
             config = parsed_config[config_section]
         else:
-            config.echo("Config section {config_section} not found", err=True)
+            click.echo("Config section {config_section} not found", err=True)
             sys.exit(1)
 
-    if rolearn:
-        config["assume_role_arn"] = rolearn
-    if oath_slot:
-        config["mfa_oath_slot"] = oath_slot
-    if serialnumber:
-        config["mfa_serial_number"] = serialnumber
     if profile_name:
         config["profile_name"] = profile_name
     if access_key_id:
         config["access_key_id"] = access_key_id
+    if mfa_serial_number:
+        config["mfa_serial_number"] = mfa_serial_number
+    if mfa_oath_slot:
+        config["mfa_oath_slot"] = mfa_oath_slot
+    if mfa_session_duration is not None:
+        config["mfa_session_duration"] = mfa_session_duration
     if secret_access_key:
         config["secret_access_key"] = secret_access_key
-    if mfa_session_duration:
-        config["mfa_session_duration"] = mfa_session_duration
+    if assume_session_duration:
+        config["assume_session_duration"] = assume_session_duration
+    if assume_role_arn:
+        config["assume_role_arn"] = assume_role_arn
     if credentials_section:
         config["credentials_section"] = credentials_section
+    if assume_role_source_identity:
+        config["assume_role_source_identity"] = assume_role_source_identity
 
     main(
         config.get("assume_role_arn"),
+        config.get("assume_role_source_identity"),
         config.get("mfa_oath_slot"),
         config.get("mfa_serial_number"),
         config.get("profile_name"),
         config.get("access_key_id"),
         config.get("secret_access_key"),
         config.get("mfa_session_duration"),
-        config.get("credentials_section"),
+        config.get("credentials_section", "default"),
+        config.get("assume_session_duration"),
     )

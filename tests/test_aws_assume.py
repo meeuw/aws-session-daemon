@@ -42,11 +42,11 @@ def setup(monkeypatch):
     fileinput_input.return_value = iter(
         textwrap.dedent(
             """
-       [testprofile]
-       aws_access_key_id =
-       aws_secret_access_key =
-       aws_session_token =
-    """
+            [testprofile]
+            aws_access_key_id =
+            aws_secret_access_key =
+            aws_session_token =
+        """
         ).splitlines(True)
     )
     monkeypatch.setattr("fileinput.input", fileinput_input)
@@ -59,9 +59,7 @@ def setup(monkeypatch):
     }
 
     def mock_sleep(args):
-        mock_sleep.iteration += 1
-        if mock_sleep.iteration > result["iterations"]:
-            raise MyTestException
+        raise MyTestException
 
     mock_sleep.iteration = 0
     monkeypatch.setattr("time.sleep", mock_sleep)
@@ -86,23 +84,30 @@ def setup(monkeypatch):
 def test_happy_flow(setup):
     runner = CliRunner()
     arguments = {
-        "rolearn": "abc",
-        "oath_slot": "def",
-        "serialnumber": "ghi",
+        "assume-role-arn": "abc",
+        "mfa-oath-slot": "def",
+        "mfa-serial-number": "ghi",
+        "mfa-session-duration": "300",
         "profile_name": "testprofile",
         "access-key-id": "test-key",
         "secret-access-key": "test-secret",
     }
     result = runner.invoke(
-        aws_session_daemon.click_main, list("--" + "=".join(k) for k in arguments.items())
+        aws_session_daemon.click_main,
+        list("--" + "=".join(k) for k in arguments.items()),
     )
     assert isinstance(result.exception, MyTestException), result.output
     assert setup["get_session_token"].mock_calls == [
-        unittest.mock.call(SerialNumber=arguments["serialnumber"], TokenCode="012345")
+        unittest.mock.call(
+            DurationSeconds=int(arguments["mfa-session-duration"]),
+            SerialNumber=arguments["mfa-serial-number"],
+            TokenCode="012345",
+        )
     ]
     assert setup["assume_role"].mock_calls == [
         unittest.mock.call(
-            RoleArn=arguments["rolearn"], RoleSessionName="aws_credential_process"
+            RoleArn=arguments["assume-role-arn"],
+            RoleSessionName="aws_credential_process",
         )
     ]
     assert result.output == textwrap.dedent(
@@ -121,15 +126,16 @@ def test_no_yubikey(setup):
     setup["token"] = None
     runner = CliRunner()
     arguments = {
-        "rolearn": "abc",
-        "oath_slot": "def",
-        "serialnumber": "ghi",
+        "assume-role-arn": "abc",
+        "mfa-oath-slot": "def",
+        "mfa-serial-number": "ghi",
         "profile_name": "testprofile",
         "access-key-id": "test-key",
         "secret-access-key": "test-secret",
     }
     result = runner.invoke(
-        aws_session_daemon.click_main, list("--" + "=".join(k) for k in arguments.items())
+        aws_session_daemon.click_main,
+        list("--" + "=".join(k) for k in arguments.items()),
     )
     assert isinstance(result.exception, MyTestException), result.exception
     assert setup["assume_role"].mock_calls == []
