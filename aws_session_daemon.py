@@ -56,6 +56,7 @@ class NoYubiKeyException(Exception):
 def main(
     assume_role_arn,
     assume_role_source_identity,
+    assume_role_role_session_name,
     mfa_oath_slot,
     mfa_serial_number,
     profile_name,
@@ -134,6 +135,7 @@ def main(
                     None,
                     None,
                     assume_role_source_identity,
+                    assume_role_role_session_name,
                     assume_session_duration,
                     mfa_serial_number,
                     token_code,
@@ -146,6 +148,7 @@ def main(
                     None,
                     None,
                     assume_role_source_identity,
+                    assume_role_role_session_name,
                     assume_session_duration,
                 )
         else:
@@ -217,6 +220,7 @@ def get_config(config_section, key):
 @click.option("--assume-session-duration", type=int)
 @click.option("--assume-role-arn")
 @click.option("--assume-role-source-identity")
+@click.option("--assume-role-role-session-name")
 @click.option("--mfa-oath-slot")
 @click.option("--mfa-serial-number")
 @click.option("--profile_name")
@@ -229,6 +233,7 @@ def click_main(
     assume_session_duration,
     assume_role_arn,
     assume_role_source_identity,
+    assume_role_role_session_name,
     mfa_oath_slot,
     mfa_serial_number,
     profile_name,
@@ -271,10 +276,13 @@ def click_main(
         config["credentials_section"] = credentials_section
     if assume_role_source_identity:
         config["assume_role_source_identity"] = assume_role_source_identity
+    if assume_role_role_session_name:
+        config["assume_role_role_session_name"] = assume_role_role_session_name
 
     main(
         config.get("assume_role_arn"),
         config.get("assume_role_source_identity"),
+        config.get("assume_role_role_session_name"),
         config.get("mfa_oath_slot"),
         config.get("mfa_serial_number"),
         config.get("profile_name"),
