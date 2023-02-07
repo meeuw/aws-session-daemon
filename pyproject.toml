@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aws-session-daemon"
-version = "0.5.0"
+version = "0.6.0"
 description = "AWS session token refreshing daemon"
 authors = ["Dick Marinus <dick@mrns.nl>"]
 readme = "README.md"
