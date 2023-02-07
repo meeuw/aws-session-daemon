@@ -23,6 +23,7 @@ pylint = "^2.4"
 [tool.poetry.scripts]
 aws-session-daemon = "aws_session_daemon:click_main"
 aws-session-daemon-get-config = "aws_session_daemon:get_config"
+aws-session-daemon-find-config = "aws_session_daemon:find_config"
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -217,6 +217,26 @@ def get_config(config_section, key):
 
 
 @click.command()
+@click.option("--key", required=True)
+@click.option("--value")
+def find_config(key, value):
+    """
+    Find config_section where --key is --value, if value is omitted
+    return all config_section --key values.
+    """
+    with open(os.path.expanduser("~/.config/aws-session-daemon/config.toml")) as f:
+        parsed_config = aws_credential_process.parse_config(toml.load(f))
+    for config_section, parsed_config_value in parsed_config.items():
+        key_value = parsed_config_value.get(key)
+        if value:
+            if key_value == value:
+                click.echo(config_section)
+        else:
+            if key_value:
+                click.echo(key_value)
+
+
+@click.command()
 @click.option("--assume-session-duration", type=int)
 @click.option("--assume-role-arn")
 @click.option("--assume-role-source-identity")
